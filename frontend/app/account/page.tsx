@@ -35,6 +35,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <ProfileForm
             displayName={profile?.display_name ?? ""}
             phone={profile?.phone ?? ""}
+            whatsappUsername={profile?.whatsapp_username ?? ""}
             next={next ? safeNext(next) : undefined}
           />
           <form action={signOut} className="mt-10">

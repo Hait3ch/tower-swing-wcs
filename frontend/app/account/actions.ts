@@ -13,7 +13,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("user_id, display_name, phone").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("user_id, display_name, phone, whatsapp_username").eq("user_id", user.id).maybeSingle();
   return data;
 }
 
@@ -27,6 +27,8 @@ export async function saveProfile(_prev: ProfileState, formData: FormData): Prom
   const result = validateProfile({
     display_name: String(formData.get("display_name") ?? ""),
     phone: String(formData.get("phone") ?? ""),
+    whatsapp_username: String(formData.get("whatsapp_username") ?? ""),
+    phone_ok: formData.get("phone_ok") === "on",
   });
   if (!result.ok) return { error: result.error };
 
