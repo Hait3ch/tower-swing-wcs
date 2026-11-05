@@ -1,20 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tower Swing">
-  <defs>
-    <linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="1" stop-color="#2563eb"/>
-    </linearGradient>
-  </defs>
-  <!-- tilted rooftop canopy on struts, like the Kalasatama tower -->
-  <path d="M14 13.5 L50 8 L50 11 L14 16.5 Z" fill="url(#t)"/>
-  <path d="M25 19 L21 15.5 M32 19 L32 14.5 M39 19 L43 13" stroke="url(#t)" stroke-width="1.6" stroke-linecap="round"/>
-  <!-- slim tower body -->
-  <rect x="23" y="19" width="18" height="39" rx="1.5" fill="url(#t)"/>
-  <!-- window grid -->
-  <g stroke="#fff" stroke-opacity=".55" stroke-width="1">
-    <path d="M29 20 V56 M35 20 V56"/>
-    <path d="M23 24 H41 M23 30 H41 M23 36 H41 M23 42 H41 M23 48 H41"/>
-  </g>
-  <!-- swing curve wrapping the base -->
-  <path d="M8 52 C18 62 46 62 56 50" fill="none" stroke="#ec4899" stroke-width="3" stroke-linecap="round"/>
+  <rect width="64" height="64" rx="14" fill="#1E3A8A"/>
+  <path d="M14 18 L50 13" stroke="#F9A8D4" stroke-width="4" stroke-linecap="round"/>
+  <path d="M18 24 H46 M32 24 V52" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
 </svg>
