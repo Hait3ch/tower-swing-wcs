@@ -14,9 +14,9 @@ export type EventListItem = {
   source: "wsdc" | "user";
 };
 
-type Props = { event: EventListItem; leaders: number; followers: number };
+type Props = { event: EventListItem; leaders: number; followers: number; matched: number };
 
-export default function EventCard({ event, leaders, followers }: Props) {
+export default function EventCard({ event, leaders, followers, matched }: Props) {
   const country = event.country_code ? iso3ToName(event.country_code) : null;
   return (
     <Link
@@ -43,7 +43,12 @@ export default function EventCard({ event, leaders, followers }: Props) {
         <div className="shrink-0 text-right text-sm leading-6">
           <p className={followers ? "text-blue-900 font-bold" : "text-gray-400"}>{followers} follower{followers === 1 ? "" : "s"}</p>
           <p className={leaders ? "text-blue-900 font-bold" : "text-gray-400"}>{leaders} leader{leaders === 1 ? "" : "s"}</p>
-          <p className="text-xs text-gray-400">looking</p>
+          <p className="text-xs text-gray-400">{leaders + followers ? "looking" : "Be the first!"}</p>
+          {matched > 0 && (
+            <p className="mt-1 text-xs font-bold text-green-700">
+              🎉 {matched} matched
+            </p>
+          )}
         </div>
       </div>
     </Link>
