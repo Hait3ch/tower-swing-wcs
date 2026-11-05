@@ -1,6 +1,10 @@
 begin;
 select plan(6);
 
+-- Isolate from any local data (rolled back at the end).
+delete from public.tower_registrations;
+delete from public.tower_events;
+
 insert into public.tower_events (id, year, name, date, max_capacity, is_active, registration_open, price, venue, address)
 values ('30000000-0000-0000-0000-000000000001', 2026, 'Tower Swing 2026', '2026-06-27 16:00+03', 1, true, true, 25, 'REDI', 'Hermannin rantatie 5');
 
