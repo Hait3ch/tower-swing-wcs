@@ -1,69 +1,65 @@
 # 🏢 Tower Swing - West Coast Swing Dance Event
 
-The highest West Coast Swing dance event in Helsinki! A full-stack web application for managing registrations, payments, and event information for the Tower Swing dance event held at Floor 33 of REDI Shopping Centre.
+The highest West Coast Swing dance event in Helsinki, plus a **partner finder** for European WCS events.
 
 ## ✨ Features
 
-- **🎫 Online Registration** - Beautiful form with validation and email confirmations
-- **📧 Email Automation** - Gmail SMTP for registration and payment confirmations
-- **🔐 Admin Dashboard** - Secure login, registration management, payment tracking
-- **📱 Responsive Design** - Works perfectly on all devices
-- **🚪 Door Code Delivery** - Automatic door code in payment confirmation emails
+- **🎫 Tower Swing registration** – form with waiting list and email confirmations
+- **💃 Find a partner** (`/partners`) – every European event from the [WSDC calendar](https://worldsdc.com/events/) plus community-added events, each with a fair, public queue: "Followers looking for a leader" and "Leaders looking for a follower"
+- **✉️ Passwordless sign-in** – email magic links (Supabase Auth)
+- **🔐 Admin** (`/admin`) – registrations, Tower Swing events, partner-queue moderation
+- **🔄 Daily WSDC sync** – Vercel Cron keeps the event list fresh, follows renames and date changes, and removes events 30 days after they end
 
 ## 🛠️ Tech Stack
 
-**Frontend:** Next.js 15, TypeScript, Tailwind CSS  
-**Backend:** Express.js, TypeScript, MongoDB Atlas, Nodemailer  
-**Deployment:** Vercel (Frontend), Render (Backend), MongoDB Atlas (Database)
+Next.js 15 (App Router, server actions) · TypeScript · Tailwind CSS · Supabase (Postgres, Auth, Row Level Security) · Nodemailer (Gmail SMTP) · Vercel (hosting + cron) · Vitest + pgTAP
 
-## 🚀 Quick Start
+```
+frontend/            Next.js app (the whole site)
+  app/partners/      partner finder pages + server actions
+  app/admin/         admin login + (protected) pages
+  app/api/cron/      WSDC sync endpoint
+  lib/wsdc/          WSDC page parser + sync logic
+  scripts/           one-off MongoDB → Supabase import
+supabase/
+  migrations/        database schema, RLS policies, SQL functions
+  tests/             pgTAP tests for access rules and registration
+```
 
-### Prerequisites
-- Node.js 18+
-- MongoDB Atlas account
-- Gmail account with App Password
+## 🚀 Local development
 
-### Setup
+Requires Node 20+ and Docker (for local Supabase).
+
 ```bash
-# Frontend
+npx supabase start                 # local Postgres + Auth + email inbox at http://127.0.0.1:54324
 cd frontend
+cp .env.example .env.local         # fill in values printed by `supabase start`
 npm install
-npm run dev
-
-# Backend
-cd backend
-npm install
-cp env.example .env
-# Edit .env with your configuration
 npm run dev
 ```
 
-## 📧 Email Setup
+Make yourself an admin locally:
 
-1. **Enable 2-Step Verification** on your Gmail account
-2. **Generate App Password** - Google Account → Security → App passwords
-3. **Select "Mail"** and generate a 16-character password
-4. **Update .env** with the App Password (remove spaces)
+```bash
+psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c "insert into admins (email) values ('you@example.com')"
+```
+
+Load WSDC events once:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/sync-wsdc
+```
+
+## 🧪 Tests
+
+```bash
+cd frontend && npm test           # unit tests (parser, sync, queue, validation, admin)
+npx supabase test db              # database tests (RLS, queue fairness, registration capacity)
+```
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
-- Connect GitHub repository to Vercel
-- Set environment variables in Vercel dashboard
-- Deploy automatically on push to main branch
-
-### Backend (Render)
-- Connect GitHub repository to Render
-- Set environment variables in Render dashboard
-- Configure build and start commands
-- Deploy automatically on push to main branch
-
-## 🐛 Troubleshooting
-
-**Email not sending?** Check Gmail App Password  
-**MongoDB connection issues?** Verify connection string and network access  
-**Admin login fails?** Verify ADMIN_EMAIL and ADMIN_PASSWORD in .env  
-**CORS errors?** Check CORS_ORIGIN configuration  
+See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## 📄 License
 

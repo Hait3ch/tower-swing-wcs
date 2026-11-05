@@ -1,248 +1,69 @@
-# Tower Swing - Deployment Guide
+# Tower Swing – Deployment Guide
 
-## 🚀 **Production Deployment Checklist**
+The whole site is one Next.js app on **Vercel**, backed by **Supabase**. There is no separate backend server anymore.
 
-### **Phase 4 Complete: System Testing ✅**
+## 1. Supabase project
 
-All systems have been tested and are operational:
-- ✅ Backend API (Port 5001)
-- ✅ Frontend (Port 3000)
-- ✅ Event System with Multi-Year Support
-- ✅ Registration System with Waiting List
-- ✅ Admin Dashboard
-- ✅ Email Notifications
-- ✅ Database Migration Complete
+1. Create a project at [supabase.com](https://supabase.com).
+2. Apply the schema from this repo:
+   ```bash
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push
+   ```
+3. **Authentication → URL Configuration**
+   - Site URL: `https://<your-domain>`
+   - Redirect URLs: `https://<your-domain>/auth/callback`
+4. **Authentication → SMTP Settings**: enable custom SMTP so sign-in emails come from the Tower Swing address (Gmail: host `smtp.gmail.com`, port `465`, user = Gmail address, password = Gmail App Password). The built-in sender is heavily rate-limited.
+5. Add admins (SQL editor):
+   ```sql
+   insert into admins (email) values ('towerswingwcs@gmail.com');
+   ```
 
----
+## 2. Vercel project
 
-## **Backend Deployment (Render.com)**
+- Root directory: `frontend`
+- Framework preset: Next.js
+- Environment variables:
 
-### **1. Environment Variables**
-Set these in your Render dashboard:
+| Name | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon / publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (**server only**) |
+| `NEXT_PUBLIC_SITE_URL` | `https://<your-domain>` |
+| `CRON_SECRET` | long random string; Vercel Cron sends it automatically |
+| `GMAIL_USER` | Gmail address used for Tower Swing emails |
+| `GMAIL_PASSWORD` | Gmail App Password |
+| `GMAIL_FROM_EMAIL` | sender address, e.g. `towerswingwcs@gmail.com` |
 
-```env
-PORT=5001
-NODE_ENV=production
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/tower-swing
-JWT_SECRET=your-super-secret-jwt-key-here
-JWT_EXPIRES_IN=7d
-CORS_ORIGIN=https://your-frontend-domain.com
-ADMIN_EMAIL=admin@towerswing.com
-ADMIN_PASSWORD=your-secure-admin-password
-GMAIL_USER=your-gmail@gmail.com
-GMAIL_APP_PASSWORD=your-gmail-app-password
-```
+`frontend/vercel.json` schedules `/api/cron/sync-wsdc` daily at 03:17 UTC. After the first deploy, trigger it once from **Vercel → Cron Jobs → Run** (or `curl -H "Authorization: Bearer $CRON_SECRET" https://<your-domain>/api/cron/sync-wsdc`) and check that `/partners` lists events.
 
-### **2. Build Settings**
-- **Build Command**: `npm run build`
-- **Start Command**: `npm start`
-- **Node Version**: 18.x or higher
+## 3. Move existing data from MongoDB
 
-### **3. Database Setup**
-- MongoDB Atlas cluster configured
-- Database: `tower-swing`
-- Collections: `events`, `registrations`
-- Migration script executed ✅
-
----
-
-## **Frontend Deployment (Vercel)**
-
-### **1. Environment Variables**
-Set these in your Vercel dashboard:
-
-```env
-NEXT_PUBLIC_API_URL=https://your-backend-domain.onrender.com
-```
-
-### **2. Build Settings**
-- **Framework Preset**: Next.js
-- **Build Command**: `npm run build`
-- **Output Directory**: `.next`
-- **Install Command**: `npm install`
-
-### **3. Domain Configuration**
-- Configure custom domain in Vercel
-- Update CORS_ORIGIN in backend to match
-
----
-
-## **Pre-Deployment Checklist**
-
-### **Backend**
-- [ ] Environment variables configured
-- [ ] MongoDB connection tested
-- [ ] Admin credentials set
-- [ ] Email service configured
-- [ ] CORS origins updated
-- [ ] Build successful locally
-
-### **Frontend**
-- [ ] API URL environment variable set
-- [ ] Build successful locally
-- [ ] Images optimized
-- [ ] Favicon configured
-- [ ] No console errors
-
-### **Database**
-- [ ] MongoDB Atlas cluster ready
-- [ ] Network access configured
-- [ ] Database user created
-- [ ] Migration script ready
-
----
-
-## **Post-Deployment Verification**
-
-### **1. Backend Health Check**
 ```bash
-curl https://your-backend-domain.onrender.com/health
+mongoexport --uri "$MONGODB_URI" --collection events --jsonArray --out events.json
+mongoexport --uri "$MONGODB_URI" --collection registrations --jsonArray --out registrations.json
+cd frontend
+NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/migrate-mongo.mts ../events.json ../registrations.json
 ```
 
-### **2. Frontend Accessibility**
-```bash
-curl https://your-frontend-domain.com
-```
+The script is safe to re-run. Compare the printed counts with MongoDB. The event that was active in MongoDB becomes the active event.
 
-### **3. API Endpoints Test**
-```bash
-# Test active event
-curl https://your-backend-domain.onrender.com/api/events/active
+## 4. Cutover checklist
 
-# Test registration
-curl -X POST https://your-backend-domain.onrender.com/api/registrations \
-  -H "Content-Type: application/json" \
-  -d '{"firstName":"Test","lastName":"User","email":"test@example.com","phone":"+358401234567","experience":"beginner"}'
-```
+- [ ] Supabase migrations applied (`npx supabase db push`)
+- [ ] Auth URL configuration and SMTP set
+- [ ] Admin emails inserted
+- [ ] Vercel env vars set and deployed
+- [ ] First cron run OK, `/partners` shows events
+- [ ] MongoDB data imported, counts match
+- [ ] Test: register on `/register`, sign in on `/admin`, join a queue on `/partners/<event>`
+- [ ] After a week without issues: shut down the Render service and the MongoDB Atlas cluster
 
-### **4. Admin Dashboard**
-- [ ] Access admin login page
-- [ ] Login with admin credentials
-- [ ] View registrations
-- [ ] Manage events
-- [ ] View waiting list
+## Troubleshooting
 
----
-
-## **Security Considerations**
-
-### **Production Security**
-- [ ] Strong JWT secret (32+ characters)
-- [ ] Secure admin password
-- [ ] HTTPS enabled
-- [ ] CORS properly configured
-- [ ] Rate limiting implemented
-- [ ] Input validation active
-- [ ] Error messages sanitized
-
-### **Environment Variables**
-- [ ] Never commit .env files
-- [ ] Use different secrets for dev/prod
-- [ ] Rotate secrets regularly
-- [ ] Monitor for exposure
-
----
-
-## **Monitoring & Maintenance**
-
-### **Health Monitoring**
-- Set up uptime monitoring
-- Monitor API response times
-- Track registration metrics
-- Monitor email delivery
-
-### **Backup Strategy**
-- MongoDB Atlas automatic backups
-- Regular database exports
-- Configuration backups
-- Code repository backups
-
-### **Updates & Maintenance**
-- Regular dependency updates
-- Security patches
-- Performance monitoring
-- User feedback collection
-
----
-
-## **Troubleshooting**
-
-### **Common Issues**
-
-**Backend Won't Start**
-- Check environment variables
-- Verify MongoDB connection
-- Check port availability
-- Review build logs
-
-**Frontend Build Fails**
-- Check Node.js version
-- Verify dependencies
-- Check environment variables
-- Review build logs
-
-**Database Connection Issues**
-- Verify MongoDB URI
-- Check network access
-- Verify credentials
-- Check cluster status
-
-**Email Not Sending**
-- Verify Gmail credentials
-- Check app password
-- Verify email templates
-- Check SMTP settings
-
----
-
-## **Performance Optimization**
-
-### **Backend**
-- [ ] Database indexing optimized
-- [ ] Query performance monitored
-- [ ] Caching implemented
-- [ ] Rate limiting configured
-
-### **Frontend**
-- [ ] Images optimized with sizes prop
-- [ ] Code splitting implemented
-- [ ] Bundle size optimized
-- [ ] CDN configured
-
----
-
-## **Support & Documentation**
-
-### **User Documentation**
-- Registration process
-- Event information
-- Contact details
-- FAQ section
-
-### **Admin Documentation**
-- Dashboard usage
-- Event management
-- Registration management
-- Waiting list management
-
----
-
-## **Success Metrics**
-
-### **Technical Metrics**
-- [ ] 99.9% uptime
-- [ ] <2s page load times
-- [ ] <500ms API response times
-- [ ] Zero security incidents
-
-### **Business Metrics**
-- [ ] Registration completion rate
-- [ ] User satisfaction scores
-- [ ] Event attendance tracking
-- [ ] Admin efficiency metrics
-
----
-
-**🎉 Ready for Production Deployment!**
-
-The Tower Swing application is fully tested, optimized, and ready for production deployment. All systems are operational and the multi-year event management system is working perfectly. 
+- **Sign-in link goes to the wrong site** – check Site URL / Redirect URLs in Supabase Auth.
+- **No sign-in emails** – configure custom SMTP in Supabase; check the Gmail App Password.
+- **Cron returns 401** – `CRON_SECRET` missing or different in Vercel.
+- **Cron returns 500 "WSDC parse returned 0 events"** – the WSDC page layout changed; nothing was modified in the database. Update `frontend/lib/wsdc/parse.ts` and its fixture.
+- **Admin page says "not an admin"** – add the email to the `admins` table.
