@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Wordmark from "./Wordmark";
 import Link from "next/link";
 import { useState, useEffect, useRef, ReactNode } from "react";
 
@@ -35,14 +36,7 @@ export default function Carousel({ images, navLinks, children }: CarouselProps) 
     <div className="relative w-screen h-screen min-h-[100dvh] overflow-hidden">
       {/* Logo and nav at the top */}
       <div className="absolute top-0 left-0 z-50 p-4 flex flex-row items-center w-full">
-        <Image
-          src="/logo.svg" unoptimized
-          alt="Tower Swing Logo"
-          width={80}
-          height={80}
-          className="h-16 w-auto object-contain"
-          priority
-        />
+        <Link href="/"><Wordmark large /></Link>
         {/* Desktop Navigation links */}
         <nav className="ml-auto hidden sm:flex flex-row gap-6 items-center w-full sm:w-auto">
           {navLinks.map((link) => (
