@@ -49,14 +49,14 @@ export default async function EventQueuePage({ params }: Params) {
   const mine = user ? queue.find((r) => r.user_id === user.id) : undefined;
   const isOver = event.end_date < todayIso();
 
-  // Phone numbers are only readable by signed-in users (profiles RLS).
-  const phones = new Map<string, string>();
+  // Contact details are only readable by signed-in users (profiles RLS).
+  const contacts = new Map<string, { phone: string | null; username: string | null }>();
   if (user && queue.length) {
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, phone")
+      .select("user_id, phone, whatsapp_username")
       .in("user_id", queue.map((r) => r.user_id));
-    for (const p of profiles ?? []) if (p.phone) phones.set(p.user_id, p.phone);
+    for (const p of profiles ?? []) contacts.set(p.user_id, { phone: p.phone, username: p.whatsapp_username });
   }
 
   const country = event.country_code ? iso3ToName(event.country_code) : null;
@@ -140,7 +140,7 @@ export default async function EventQueuePage({ params }: Params) {
               title="Followers looking for a leader"
               emptyText="No followers waiting yet."
               rows={followers}
-              phones={phones}
+              contacts={contacts}
               eventName={event.name}
               currentUserId={user?.id ?? null}
               signedIn={!!user}
@@ -149,7 +149,7 @@ export default async function EventQueuePage({ params }: Params) {
               title="Leaders looking for a follower"
               emptyText="No leaders waiting yet."
               rows={leaders}
-              phones={phones}
+              contacts={contacts}
               eventName={event.name}
               currentUserId={user?.id ?? null}
               signedIn={!!user}
