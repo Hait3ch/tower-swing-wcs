@@ -5,9 +5,7 @@ import Carousel from "../components/Carousel";
 import Countdown from "../components/Countdown";
 import TowerSwingSection from "../components/TowerSwingSection";
 import ScrollGradient from "../components/ScrollGradient";
-import { Dancing_Script } from "next/font/google";
 
-const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] });
 
 const carouselImages = [
   "/assets/optimized/carousel1.jpg",
@@ -27,11 +25,6 @@ export default function LandingPage() {
   return (
     <>
       <Carousel images={carouselImages} navLinks={navLinks}>
-        <h1
-          className={`text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-lg mb-4 ${dancingScript.className}`}
-        >
-          Tower Swing
-        </h1>
         <p className="text-xl sm:text-2xl md:text-3xl text-white mb-4 drop-shadow">
           3.7.2027 Helsinki, Finland
         </p>
