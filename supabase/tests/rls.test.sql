@@ -39,7 +39,7 @@ select is_empty($$ select 1 from public.tower_registrations $$, 'anon cannot rea
 -- ---------- user A ----------
 reset role;
 insert into public.tower_registrations (first_name, last_name, email, phone, experience, event_date, price)
-  values ('T', 'T', 't@example.com', '1', 'beginner', now(), 0);
+  values ('T', 'T', 't@test.invalid', '1', 'beginner', now(), 0);
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-00000000000a","email":"rls-a@test.invalid","role":"authenticated"}', true);

@@ -1,5 +1,7 @@
 # Tower Swing - Phase Summary
 
+> **Update (Phase 5, Nov 2026):** the Express + MongoDB backend has been replaced by **Supabase** (Postgres, Auth, RLS) called directly from the Next.js app, and a **partner finder** for European WCS events was added (`/partners`). See [README.md](README.md) and [DEPLOYMENT.md](DEPLOYMENT.md) for the current architecture; the sections below describe Phases 1–4 as originally built.
+
 ## 🎯 **Project Overview**
 
 **Tower Swing** is a comprehensive dance event management system built with modern web technologies. The application handles event registrations, waiting lists, admin management, and multi-year event planning.
