@@ -60,3 +60,56 @@ export async function addEvent(_prev: AddEventState, formData: FormData): Promis
   }
   return { error: "Could not add the event. Please try again." };
 }
+
+export type JoinState = { error?: string };
+
+export async function joinQueue(_prev: JoinState, formData: FormData): Promise<JoinState> {
+  const slug = String(formData.get("slug") ?? "");
+  const { supabase, user } = await requireProfile(`/partners/${slug}`);
+  const eventId = String(formData.get("event_id") ?? "");
+  const role = String(formData.get("role") ?? "");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 200) || null;
+  if (role !== "leader" && role !== "follower") return { error: "Please choose leader or follower." };
+
+  const { data: event } = await supabase.from("dance_events").select("end_date").eq("id", eventId).maybeSingle();
+  if (!event) return { error: "This event no longer exists." };
+  if (event.end_date < todayIso()) return { error: "This event is already over." };
+
+  const { error } = await supabase.from("partner_entries").insert({ event_id: eventId, user_id: user.id, role, note });
+  if (error) {
+    if (error.code === "23505") return { error: "You are already in this queue." };
+    console.error("joinQueue failed:", error.message);
+    return { error: "Could not join the queue. Please try again." };
+  }
+  revalidatePath(`/partners/${slug}`);
+  revalidatePath("/partners");
+  return {};
+}
+
+async function closeEntry(formData: FormData, status: "matched" | "withdrawn") {
+  const slug = String(formData.get("slug") ?? "");
+  const entryId = String(formData.get("entry_id") ?? "");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/auth/login?next=/partners/${slug}`);
+  // RLS limits this to the caller's own entries.
+  const { error } = await supabase
+    .from("partner_entries")
+    .update({ status })
+    .eq("id", entryId)
+    .eq("user_id", user.id)
+    .eq("status", "looking");
+  if (error) console.error(`closeEntry(${status}) failed:`, error.message);
+  revalidatePath(`/partners/${slug}`);
+  revalidatePath("/partners");
+}
+
+export async function leaveQueue(formData: FormData) {
+  await closeEntry(formData, "withdrawn");
+}
+
+export async function markMatched(formData: FormData) {
+  await closeEntry(formData, "matched");
+}
