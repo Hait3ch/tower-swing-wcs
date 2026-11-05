@@ -4,13 +4,13 @@ type Props = {
   title: string;
   emptyText: string;
   rows: Array<QueueRow & { position: number }>;
-  phones: Map<string, string>;
+  contacts: Map<string, { phone: string | null; username: string | null }>;
   eventName: string;
   currentUserId: string | null;
   signedIn: boolean;
 };
 
-export default function QueueList({ title, emptyText, rows, phones, eventName, currentUserId, signedIn }: Props) {
+export default function QueueList({ title, emptyText, rows, contacts, eventName, currentUserId, signedIn }: Props) {
   return (
     <section className="rounded-2xl bg-white border border-gray-200 shadow-sm">
       <h2 className="px-5 pt-4 pb-3 border-b border-gray-100 text-lg font-bold text-blue-900">
@@ -21,7 +21,7 @@ export default function QueueList({ title, emptyText, rows, phones, eventName, c
       ) : (
         <ol className="divide-y divide-gray-100">
           {rows.map((r) => {
-            const phone = phones.get(r.user_id);
+            const { phone, username } = contacts.get(r.user_id) ?? { phone: null, username: null };
             const mine = r.user_id === currentUserId;
             return (
               <li key={r.id} className={`px-5 py-3 flex items-start gap-3 ${mine ? "bg-blue-50" : ""}`}>
@@ -33,7 +33,12 @@ export default function QueueList({ title, emptyText, rows, phones, eventName, c
                   {r.note && <p className="text-sm text-gray-600 break-words">“{r.note}”</p>}
                   <p className="text-xs text-gray-400">joined {timeAgo(r.created_at)}</p>
                 </div>
-                {!mine && phone && (
+                {!mine && username && (
+                  <span className="shrink-0 text-sm px-3 py-1.5 rounded-full bg-green-50 text-green-800 font-semibold select-all" title="WhatsApp username">
+                    WhatsApp @{username}
+                  </span>
+                )}
+                {!mine && !username && phone && (
                   <a
                     href={waLink(phone, eventName)}
                     target="_blank"
