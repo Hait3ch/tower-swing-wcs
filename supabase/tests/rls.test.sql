@@ -3,10 +3,10 @@ select plan(17);
 
 -- ---------- fixtures (as postgres, bypassing RLS) ----------
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
-  ('00000000-0000-0000-0000-00000000000b', 'b@example.com'),
-  ('00000000-0000-0000-0000-0000000000ad', 'admin@example.com');
-insert into public.admins (email) values ('admin@example.com');
+  ('00000000-0000-0000-0000-00000000000a', 'rls-a@test.invalid'),
+  ('00000000-0000-0000-0000-00000000000b', 'rls-b@test.invalid'),
+  ('00000000-0000-0000-0000-0000000000ad', 'rls-admin@test.invalid');
+insert into public.admins (email) values ('rls-admin@test.invalid');
 insert into public.profiles (user_id, display_name, phone) values
   ('00000000-0000-0000-0000-00000000000a', 'Alice', '+358401111111'),
   ('00000000-0000-0000-0000-00000000000b', 'Bob', '+358402222222');
@@ -42,7 +42,7 @@ insert into public.tower_registrations (first_name, last_name, email, phone, exp
   values ('T', 'T', 't@example.com', '1', 'beginner', now(), 0);
 set local role authenticated;
 select set_config('request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-00000000000a","email":"a@example.com","role":"authenticated"}', true);
+  '{"sub":"00000000-0000-0000-0000-00000000000a","email":"rls-a@test.invalid","role":"authenticated"}', true);
 
 select is_empty($$ select 1 from public.tower_registrations $$, 'non-admin cannot read tower registrations');
 select is_empty(
@@ -83,7 +83,7 @@ select results_eq(
 
 -- ---------- admin ----------
 select set_config('request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-0000000000ad","email":"admin@example.com","role":"authenticated"}', true);
+  '{"sub":"00000000-0000-0000-0000-0000000000ad","email":"rls-admin@test.invalid","role":"authenticated"}', true);
 select isnt_empty(
   $$ delete from public.dance_events where id = '10000000-0000-0000-0000-000000000001' returning id $$,
   'admin can delete events');
