@@ -32,9 +32,9 @@ export default function LandingPage() {
           Tower Swing
         </h1>
         <p className="text-xl sm:text-2xl md:text-3xl text-white mb-4 drop-shadow">
-          28.6.2025 Helsinki, Finland
+          3.7.2027 Helsinki, Finland
         </p>
-        <Countdown targetDate="2025-06-28T16:00:00+03:00" />
+        <Countdown targetDate="2027-07-03T16:00:00+03:00" />
         <div className="flex flex-col sm:flex-row gap-4 mt-4">
           <Link
             href="/register"
