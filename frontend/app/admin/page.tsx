@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Dancing_Script } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
-import LoginForm from "../auth/login/LoginForm";
+import AdminLoginForm from "./AdminLoginForm";
 import { signOut } from "../auth/actions";
 
 const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] });
@@ -33,10 +33,7 @@ export default async function AdminPage() {
               </form>
             </div>
           ) : (
-            <>
-              <p className="text-gray-600 mb-6 text-center">We&apos;ll email you a sign-in link.</p>
-              <LoginForm next="/admin/dashboard" />
-            </>
+            <AdminLoginForm />
           )}
         </div>
       </div>
