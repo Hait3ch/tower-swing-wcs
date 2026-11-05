@@ -31,7 +31,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
       .order("start_date")
       .order("name")
       .limit(1000),
-    supabase.from("event_queue_counts").select("event_id, leaders, followers"),
+    supabase.from("event_queue_counts").select("event_id, leaders, followers, matched"),
   ]);
   const events = (all ?? []) as EventListItem[];
   const countBy = new Map((counts ?? []).map((c) => [c.event_id, c]));
@@ -42,12 +42,15 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
   const months = [...new Set(events.map((e) => e.start_date.slice(0, 7)))];
 
   const needle = q.trim().toLowerCase();
+  const looking = (id: string) => (countBy.get(id)?.leaders ?? 0) + (countBy.get(id)?.followers ?? 0);
+  // Events with people waiting first (most first), then ones with matches; date order otherwise (stable sort).
+  const rank = (id: string) => looking(id) * 1000 + (countBy.get(id)?.matched ?? 0);
   const shown = events.filter(
     (e) =>
       (!country || e.country_code === country) &&
       (!month || e.start_date.slice(0, 7) === month) &&
       (!needle || e.name.toLowerCase().includes(needle) || (e.location ?? "").toLowerCase().includes(needle)),
-  );
+  ).sort((a, b) => rank(b.id) - rank(a.id));
 
   const select = "rounded-lg border border-gray-300 px-3 py-2 bg-white text-gray-900";
 
@@ -100,7 +103,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {shown.map((e) => (
-              <EventCard key={e.id} event={e} leaders={countBy.get(e.id)?.leaders ?? 0} followers={countBy.get(e.id)?.followers ?? 0} />
+              <EventCard key={e.id} event={e} leaders={countBy.get(e.id)?.leaders ?? 0} followers={countBy.get(e.id)?.followers ?? 0} matched={countBy.get(e.id)?.matched ?? 0} />
             ))}
           </div>
           {shown.length === 0 && (
