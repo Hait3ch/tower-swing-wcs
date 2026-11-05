@@ -36,7 +36,7 @@ export default function Carousel({ images, navLinks, children }: CarouselProps) 
       {/* Logo and nav at the top */}
       <div className="absolute top-0 left-0 z-50 p-4 flex flex-row items-center w-full">
         <Image
-          src="/assets/optimized/logo.png"
+          src="/logo.svg" unoptimized
           alt="Tower Swing Logo"
           width={80}
           height={80}

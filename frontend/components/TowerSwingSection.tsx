@@ -8,7 +8,7 @@ const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] });
 
 export default function TowerSwingSection() {
   return (
-    <section className="w-full bg-gradient-to-br from-white via-blue-50 to-purple-50 py-16 md:py-24 px-4 sm:px-8 md:px-16 lg:px-32">
+    <section className="w-full py-16 md:py-24 px-4 sm:px-8 md:px-16 lg:px-32">
       {/* Section Header */}
       <div className="text-center mb-16">
         <h2 className={`text-4xl md:text-5xl font-bold text-blue-900 mb-4 ${dancingScript.className}`}>
