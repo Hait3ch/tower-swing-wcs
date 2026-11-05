@@ -61,7 +61,7 @@ export const sendRegistrationConfirmation = async (data: EmailData): Promise<voi
               <p><strong>Name:</strong> ${data.firstName} ${data.lastName}</p>
               <p><strong>Email:</strong> ${data.email}</p>
               <p><strong>Experience Level:</strong> ${data.experience}</p>
-              <p><strong>Event Date:</strong> June 28, 2025</p>
+              <p><strong>Event Date:</strong> July 3, 2027</p>
               <p><strong>Event Time:</strong> 16:00 - 23:45</p>
               <p><strong>Spa Opens:</strong> 20:00</p>
               <p><strong>Venue:</strong> Floor 33, REDI Shopping Centre, Helsinki</p>
@@ -79,7 +79,7 @@ export const sendRegistrationConfirmation = async (data: EmailData): Promise<voi
           
           <h3>🎫 Event Details:</h3>
           <ul>
-            <li><strong>Date:</strong> June 28, 2025</li>
+            <li><strong>Date:</strong> July 3, 2027</li>
             <li><strong>Time:</strong> 16:00 - 23:45</li>
             <li><strong>Venue:</strong> Floor 33, REDI Shopping Centre, Helsinki</li>
             <li><strong>Price:</strong> €15</li>
@@ -149,12 +149,12 @@ export const sendPaymentConfirmation = async (data: EmailData): Promise<void> =>
           
           <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3>🎫 Your Spot is Reserved!</h3>
-            <p>You're all set for the highest West Coast Swing event in Helsinki on <strong>June 28, 2025</strong>.</p>
+            <p>You're all set for the highest West Coast Swing event in Helsinki on <strong>July 3, 2027</strong>.</p>
           </div>
           
           <h3>📅 Event Details:</h3>
           <ul>
-            <li><strong>Date:</strong> June 28, 2025</li>
+            <li><strong>Date:</strong> July 3, 2027</li>
             <li><strong>Time:</strong> 16:00 - 23:45</li>
             <li><strong>Venue:</strong> Floor 33, REDI Shopping Centre, Helsinki</li>
             <li><strong>Address:</strong> Kalasatamankatu 9 A</li>
