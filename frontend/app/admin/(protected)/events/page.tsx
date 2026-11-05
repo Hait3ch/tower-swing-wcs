@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { listTowerEvents, saveTowerEvent, activateTowerEvent } from "../../actions";
 
 interface Event {
   _id: string;
@@ -25,7 +25,6 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const router = useRouter();
 
   // Form state for creating/editing events
   const [formData, setFormData] = useState({
@@ -44,85 +43,31 @@ export default function EventsPage() {
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/events'
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/events`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`
-        }
-      });
-
-      if (response.status === 401) {
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
-        return;
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-      } else {
-        setError('Failed to fetch events');
-      }
+      setEvents(await listTowerEvents());
     } catch {
-      setError('Network error');
+      setError('Failed to fetch events');
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("adminAuthenticated");
-    const adminToken = sessionStorage.getItem("adminToken");
-    
-    if (!isAuthenticated || !adminToken) {
-      router.push("/admin");
-      return;
-    }
-
+    // Access is checked on the server by the (protected) layout.
     fetchEvents();
-  }, [router, fetchEvents]);
+  }, [fetchEvents]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/events${editingEvent ? `/${editingEvent._id}` : ''}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/events${editingEvent ? `/${editingEvent._id}` : ''}`;
-
-      const method = editingEvent ? 'PATCH' : 'POST';
-
-      const response = await fetch(apiUrl, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.status === 401) {
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
+      const result = await saveTowerEvent(formData, editingEvent?._id);
+      if (result.error) {
+        setError(result.error);
         return;
       }
-
-      if (response.ok) {
-        setShowCreateForm(false);
-        setEditingEvent(null);
-        resetForm();
-        fetchEvents();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to save event');
-      }
+      setShowCreateForm(false);
+      setEditingEvent(null);
+      resetForm();
+      fetchEvents();
     } catch {
       setError('Network error');
     }
@@ -147,30 +92,9 @@ export default function EventsPage() {
 
   const handleActivate = async (eventId: string) => {
     try {
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/events/${eventId}/activate`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/events/${eventId}/activate`;
-
-      const response = await fetch(apiUrl, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`
-        }
-      });
-
-      if (response.status === 401) {
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
-        return;
-      }
-
-      if (response.ok) {
-        fetchEvents();
-      } else {
-        setError('Failed to activate event');
-      }
+      const result = await activateTowerEvent(eventId);
+      if (result.error) setError('Failed to activate event');
+      else fetchEvents();
     } catch {
       setError('Network error');
     }
@@ -246,6 +170,12 @@ export default function EventsPage() {
               className="px-3 py-2 text-blue-600 border-b-2 border-blue-600 font-medium"
             >
               Events
+            </Link>
+            <Link
+              href="/admin/partners"
+              className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300 font-medium"
+            >
+              Partner queue
             </Link>
           </nav>
         </div>

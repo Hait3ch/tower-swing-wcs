@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Dancing_Script } from "next/font/google";
+import { listRegistrations, listTowerEvents, updateRegistrationStatus } from "../../actions";
+import { signOut } from "../../../auth/actions";
 
 const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] });
 
@@ -47,140 +48,54 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [eventFilter, setEventFilter] = useState("all");
-  const router = useRouter();
 
   const fetchRegistrations = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/registrations'
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/registrations`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        // Token expired or invalid
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch registrations');
-      }
-
-      const data = await response.json();
-      setRegistrations(data.registrations || []);
+      setRegistrations(await listRegistrations());
     } catch (err) {
       console.error('Error fetching registrations:', err);
       setError('Failed to load registrations. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   const fetchEvents = useCallback(async () => {
     try {
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/events'
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/events`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch events');
-      }
-
-      const data = await response.json();
-      setEvents(data || []);
+      setEvents(await listTowerEvents());
     } catch (err) {
       console.error('Error fetching events:', err);
       // Don't set error for events as it's not critical for dashboard functionality
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("adminAuthenticated");
-    const adminToken = sessionStorage.getItem("adminToken");
-    
-    if (!isAuthenticated || !adminToken) {
-      router.push("/admin");
-      return;
-    }
-
-    // Fetch both registrations and events
+    // Access is checked on the server by the (protected) layout.
     fetchRegistrations();
     fetchEvents();
-  }, [router, fetchRegistrations, fetchEvents]);
+  }, [fetchRegistrations, fetchEvents]);
 
   const updatePaymentStatus = async (registrationId: string, newStatus: 'paid' | 'pending' | 'cancelled' | 'waiting') => {
     try {
-      const adminToken = sessionStorage.getItem("adminToken");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/registrations/${registrationId}/status`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/registrations/${registrationId}/status`;
-
-      const response = await fetch(apiUrl, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ paymentStatus: newStatus }),
-      });
-
-      if (response.status === 401) {
-        sessionStorage.removeItem("adminAuthenticated");
-        sessionStorage.removeItem("adminToken");
-        router.push("/admin");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to update payment status');
-      }
-
+      await updateRegistrationStatus(registrationId, newStatus);
       // Update the local state
-      setRegistrations(prev => 
-        prev.map(reg => 
-          reg._id === registrationId 
+      setRegistrations(prev =>
+        prev.map(reg =>
+          reg._id === registrationId
             ? { ...reg, paymentStatus: newStatus }
             : reg
         )
       );
-
     } catch (err) {
       console.error('Error updating payment status:', err);
       setError('Failed to update payment status. Please try again.');
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("adminAuthenticated");
-    sessionStorage.removeItem("adminToken");
-    router.push("/admin");
+  const handleLogout = async () => {
+    await signOut();
   };
 
   const filteredRegistrations = registrations.filter(registration => {
@@ -300,6 +215,12 @@ export default function DashboardPage() {
               className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300 font-medium"
             >
               Events
+            </Link>
+            <Link
+              href="/admin/partners"
+              className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300 font-medium"
+            >
+              Partner queue
             </Link>
           </nav>
         </div>

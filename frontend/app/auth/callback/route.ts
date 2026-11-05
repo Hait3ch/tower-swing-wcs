@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   if (error || !data.user) return NextResponse.redirect(new URL("/auth/login?error=expired", url.origin));
 
   const { data: profile } = await supabase.from("profiles").select("user_id").eq("user_id", data.user.id).maybeSingle();
-  const target = profile ? next : `/account?next=${encodeURIComponent(next)}`;
+  // Admin pages need no dancer profile.
+  const target = profile || next.startsWith("/admin") ? next : `/account?next=${encodeURIComponent(next)}`;
   return NextResponse.redirect(new URL(target, url.origin));
 }
