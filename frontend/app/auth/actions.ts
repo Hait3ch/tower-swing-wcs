@@ -29,3 +29,12 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/partners");
 }
+
+export async function signInWithPassword(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { error: "Wrong email or password." };
+  redirect(safeNext(String(formData.get("next") ?? "")));
+}
