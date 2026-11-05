@@ -21,6 +21,15 @@ export function validateProfile(input: ProfileInput): Result {
 
 /** Post-login redirect target; only same-site relative paths are allowed. */
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/partners";
-  return next;
+  const fallback = "/partners";
+  // Browsers strip tabs/newlines and treat "\" like "/", so "/\t/evil.com" would leave the site.
+  if (!next || !next.startsWith("/") || /[\x00-\x20\\]/.test(next)) return fallback;
+  try {
+    const base = "http://same.invalid";
+    const url = new URL(next, base);
+    if (url.origin !== base) return fallback;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return fallback;
+  }
 }

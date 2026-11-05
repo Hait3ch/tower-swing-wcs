@@ -114,6 +114,55 @@ describe("syncWsdcEvents", () => {
   });
 });
 
+describe("syncWsdcEvents safety (review fixes)", () => {
+  const today = "2026-11-05";
+
+  it("never adopts a user-added row, even with a matching key", async () => {
+    const userRow = row({ id: "u", slug: "user-slug", source: "user", wsdc_key: "winter-coast-swing-2027", url: null });
+    const { d, saved } = deps({ loadExisting: vi.fn(async () => [userRow]), today });
+    await syncWsdcEvents(d);
+    const r = saved.flat().find((x) => x.name === "Winter Coast Swing");
+    expect(r?.id).not.toBe("u");
+  });
+
+  it("does not hand an ended event's queue to a new event on the same website", async () => {
+    // "X Spring" ended last week but is still stored; WSDC now lists "X Summer" on the same host.
+    const ended = row({
+      id: "spring",
+      slug: "x-spring-2026",
+      name: "X Spring",
+      url: "https://x-fest.example.com",
+      wsdc_key: "x-spring-2026",
+      start_date: "2026-10-27",
+      end_date: "2026-10-29",
+    });
+    const summerHtml = `<tr class="  "><td>Dec 4 - 6, 2026</td><td><div class="event_name"><a href="https://x-fest.example.com" TARGET="_blank">X Summer</a></div><div class="event_type">Registry Event</div></td><td>Helsinki, Finland</td><td><a href="?country=FIN" border="0"></a></td></tr>`;
+    const { d, saved } = deps({ fetchHtml: vi.fn(async () => summerHtml), loadExisting: vi.fn(async () => [ended]), today });
+    await syncWsdcEvents(d);
+    const r = saved.flat().find((x) => x.name === "X Summer");
+    expect(r?.id).not.toBe("spring");
+  });
+
+  it("does not guess when two incoming events share the old event's website", async () => {
+    const old = row({
+      id: "old",
+      slug: "x-fest-2027",
+      name: "X Fest",
+      url: "https://x-fest.example.com",
+      wsdc_key: "x-fest-2027",
+      start_date: "2027-03-10",
+      end_date: "2027-03-12",
+    });
+    const tr = (name: string, dates: string) =>
+      `<tr class="  "><td>${dates}</td><td><div class="event_name"><a href="https://x-fest.example.com" TARGET="_blank">${name}</a></div><div class="event_type">Registry Event</div></td><td>Helsinki, Finland</td><td><a href="?country=FIN" border="0"></a></td></tr>`;
+    const html = tr("X Fest Renamed", "Mar 10 - 12, 2027") + tr("X Fest Newcomer", "Mar 20 - 22, 2027");
+    const { d, saved } = deps({ fetchHtml: vi.fn(async () => html), loadExisting: vi.fn(async () => [old]), today });
+    await syncWsdcEvents(d);
+    expect(saved.flat().filter((x) => x.id === "old")).toHaveLength(0);
+    expect(saved.flat()).toHaveLength(2);
+  });
+});
+
 describe("matchExisting", () => {
   const incoming = row({ name: "Fest New Name", wsdc_key: "fest-new-name-2027", start_date: "2027-03-20" });
 

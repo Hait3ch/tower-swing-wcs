@@ -1,5 +1,6 @@
 import { parseWsdcHtml, urlHost, type WsdcEvent } from "@/lib/wsdc/parse";
 import { EUROPE_ISO3 } from "@/lib/europe";
+import { todayIso } from "@/lib/partners/events";
 
 export type DanceEventRow = {
   id: string;
@@ -23,6 +24,8 @@ export type SyncDeps = {
   loadExisting: () => Promise<DanceEventRow[]>;
   save: (rows: DanceEventRow[]) => Promise<void>;
   purge: () => Promise<number>;
+  /** yyyy-mm-dd; defaults to today in Helsinki. Events that ended before it are never rename candidates. */
+  today?: string;
 };
 
 const RENAME_WINDOW_DAYS = 60;
@@ -32,10 +35,15 @@ const daysBetween = (a: string, b: string) =>
 /**
  * Finds the stored event an incoming WSDC event corresponds to:
  * 1. same wsdc_key (same name + year; covers date corrections), else
- * 2. the only WSDC event on the same website host starting within 60 days (covers renames).
+ * 2. the only upcoming WSDC event on the same website host starting within 60 days (covers renames).
+ * User-added events are never matched: they are not WSDC's to rewrite.
  */
-export function matchExisting(incoming: DanceEventRow, existing: DanceEventRow[]): DanceEventRow | null {
-  const byKey = existing.find((e) => e.wsdc_key && e.wsdc_key === incoming.wsdc_key);
+export function matchExisting(
+  incoming: DanceEventRow,
+  existing: DanceEventRow[],
+  today: string = todayIso(),
+): DanceEventRow | null {
+  const byKey = existing.find((e) => e.source === "wsdc" && e.wsdc_key && e.wsdc_key === incoming.wsdc_key);
   if (byKey) return byKey;
 
   const host = urlHost(incoming.url);
@@ -43,6 +51,7 @@ export function matchExisting(incoming: DanceEventRow, existing: DanceEventRow[]
   const candidates = existing.filter(
     (e) =>
       e.source === "wsdc" &&
+      e.end_date >= today &&
       urlHost(e.url) === host &&
       daysBetween(e.start_date, incoming.start_date) <= RENAME_WINDOW_DAYS,
   );
@@ -95,16 +104,24 @@ export async function syncWsdcEvents(deps: SyncDeps): Promise<{ upserted: number
 
   // Pass 1: exact key matches claim their rows before any host-based guessing.
   for (const row of incoming) {
-    const hit = pool.find((e) => e.wsdc_key === row.wsdc_key);
+    const hit = pool.find((e) => e.source === "wsdc" && e.wsdc_key === row.wsdc_key);
     if (hit) {
       matched.set(row, hit);
       pool = pool.filter((e) => e !== hit);
     }
   }
-  // Pass 2: renames, matched by website host.
+  // Pass 2: renames, matched by website host — only when exactly one unmatched
+  // incoming event uses that host, so two new events can't fight over one queue.
+  const today = deps.today ?? todayIso();
+  const unmatchedPerHost = new Map<string, number>();
+  for (const row of incoming) {
+    const host = urlHost(row.url);
+    if (!matched.has(row) && host) unmatchedPerHost.set(host, (unmatchedPerHost.get(host) ?? 0) + 1);
+  }
   for (const row of incoming) {
     if (matched.has(row)) continue;
-    const hit = matchExisting(row, pool);
+    if ((unmatchedPerHost.get(urlHost(row.url) ?? "") ?? 0) !== 1) continue;
+    const hit = matchExisting(row, pool, today);
     if (hit) {
       matched.set(row, hit);
       pool = pool.filter((e) => e !== hit);

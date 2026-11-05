@@ -39,4 +39,15 @@ describe("safeNext", () => {
     expect(safeNext("//evil.com")).toBe("/partners");
     expect(safeNext(null)).toBe("/partners");
   });
+  it("rejects control characters that browsers strip (open redirect)", () => {
+    expect(safeNext("/\t/evil.com")).toBe("/partners");
+    expect(safeNext("/\n/evil.com")).toBe("/partners");
+    expect(safeNext("/%09/evil.com")).toBe("/%09/evil.com");
+    expect(safeNext("/partners/x?y=1")).toBe("/partners/x?y=1");
+  });
+  it("never resolves to another origin", () => {
+    for (const bad of ["/\\evil.com", "/\r//evil.com", "/ /evil.com"]) {
+      expect(new URL(safeNext(bad), "https://towerswing.fi").origin).toBe("https://towerswing.fi");
+    }
+  });
 });
