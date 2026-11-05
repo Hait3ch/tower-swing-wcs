@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getActiveTowerEvent, registerForTowerSwing } from "./actions";
 import Link from "next/link";
 import Image from "next/image";
 import { Dancing_Script } from "next/font/google";
@@ -54,17 +55,7 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchActiveEvent = async () => {
       try {
-        const apiUrl = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:5001/api/events/active'
-          : `${process.env.NEXT_PUBLIC_API_URL}/api/events/active`;
-
-        const response = await fetch(apiUrl);
-        if (response.ok) {
-          const event = await response.json();
-          setActiveEvent(event);
-        } else {
-          console.error('Failed to fetch active event');
-        }
+        setActiveEvent(await getActiveTowerEvent());
       } catch (error) {
         console.error('Error fetching active event:', error);
       } finally {
@@ -127,31 +118,19 @@ export default function RegisterPage() {
     setSubmitStatus({ type: null, message: '' });
 
     try {
-      // In development, use localhost:5001, in production use your Render URL
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/registrations'
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/registrations`;
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim(),
-          experience: formData.experience,
-        }),
+      const result = await registerForTowerSwing({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        experience: formData.experience,
       });
 
-      if (response.ok) {
-        const responseData = await response.json();
+      if (result.ok) {
         setSubmitStatus({ 
           type: 'success', 
-          message: responseData.message,
-          isWaitingList: responseData.isWaitingList
+          message: result.message,
+          isWaitingList: result.isWaitingList
         });
         
         // Show email button after 1 minute
@@ -169,10 +148,9 @@ export default function RegisterPage() {
           agreeToTerms: false,
         });
       } else {
-        const errorData = await response.json();
         setSubmitStatus({ 
           type: 'error', 
-          message: errorData.message || 'Registration failed. Please try again.' 
+          message: result.message 
         });
       }
     } catch (error) {
