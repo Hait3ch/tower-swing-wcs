@@ -16,6 +16,7 @@ const carouselImages = [
 ];
 
 const navLinks = [
+  { name: "Find a partner", href: "/partners" },
   { name: "Venue", href: "/venue" },
   { name: "Register", href: "/register" },
   { name: "Contact", href: "/contact" },
