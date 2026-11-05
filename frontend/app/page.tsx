@@ -4,6 +4,7 @@ import Link from "next/link";
 import Carousel from "../components/Carousel";
 import Countdown from "../components/Countdown";
 import TowerSwingSection from "../components/TowerSwingSection";
+import ScrollGradient from "../components/ScrollGradient";
 import { Dancing_Script } from "next/font/google";
 
 const dancingScript = Dancing_Script({ subsets: ["latin"], weight: ["700"] });
@@ -45,7 +46,9 @@ export default function LandingPage() {
         </div>
       </Carousel>
 
-      <TowerSwingSection />
+      <ScrollGradient>
+        <TowerSwingSection />
+      </ScrollGradient>
     </>
   );
 }

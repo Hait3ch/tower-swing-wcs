@@ -9,6 +9,7 @@ export const metadata = {
   description: "Tower Swing Dance Event Website",
   icons: {
     icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
       { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={nunito.className}>
