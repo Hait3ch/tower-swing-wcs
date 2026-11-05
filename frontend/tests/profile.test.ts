@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { validateProfile, safeNext } from "@/lib/profile";
+import { validateProfile as vp, safeNext } from "@/lib/profile";
+
+const validateProfile = (i: { display_name: string; phone: string; whatsapp_username?: string; phone_ok?: boolean }) =>
+  vp({ whatsapp_username: "", phone_ok: true, ...i });
 
 describe("validateProfile", () => {
   it("requires a display name", () => {
@@ -13,11 +16,11 @@ describe("validateProfile", () => {
   it("normalizes phone numbers", () => {
     expect(validateProfile({ display_name: " Alice ", phone: "+358 40 123 4567" })).toEqual({
       ok: true,
-      value: { display_name: "Alice", phone: "+358401234567" },
+      value: { display_name: "Alice", phone: "+358401234567", whatsapp_username: null },
     });
     expect(validateProfile({ display_name: "A", phone: "040-123 4567" })).toEqual({
       ok: true,
-      value: { display_name: "A", phone: "0401234567" },
+      value: { display_name: "A", phone: "0401234567", whatsapp_username: null },
     });
   });
   it("rejects invalid phones", () => {
@@ -28,7 +31,17 @@ describe("validateProfile", () => {
     expect(validateProfile({ display_name: "A", phone: "123" }).ok).toBe(false);
   });
   it("treats an empty phone as none", () => {
-    expect(validateProfile({ display_name: "A", phone: "" })).toEqual({ ok: true, value: { display_name: "A", phone: null } });
+    expect(validateProfile({ display_name: "A", phone: "" })).toEqual({ ok: true, value: { display_name: "A", phone: null, whatsapp_username: null } });
+  });
+  it("normalizes WhatsApp usernames", () => {
+    expect(validateProfile({ display_name: "A", phone: "", whatsapp_username: " @Mira.Dances " })).toEqual({
+      ok: true,
+      value: { display_name: "A", phone: null, whatsapp_username: "mira.dances" },
+    });
+    expect(validateProfile({ display_name: "A", phone: "", whatsapp_username: "a b" }).ok).toBe(false);
+  });
+  it("requires consent to share a phone number", () => {
+    expect(validateProfile({ display_name: "A", phone: "+358401234567", phone_ok: false }).ok).toBe(false);
   });
 });
 
