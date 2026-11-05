@@ -2,7 +2,17 @@
 
 import { useEffect, useRef } from "react";
 
-/** Background whose gradient hue drifts as the page scrolls. */
+// [left%, top%, size vw, hue, delay s]; sizes in vw so phones get the same look.
+const PUFFS = [
+  [-10, 5, 70, 230, 0],
+  [55, 15, 60, 275, -4],
+  [10, 45, 80, 300, -8],
+  [60, 60, 65, 250, -12],
+  [-5, 80, 75, 320, -6],
+  [45, 95, 70, 265, -14],
+] as const;
+
+/** Soft smoke that drifts on its own and rises as the page scrolls. */
 export default function ScrollGradient({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -22,15 +32,28 @@ export default function ScrollGradient({ children }: { children: React.ReactNode
     };
   }, []);
   return (
-    <div
-      ref={ref}
-      style={{
-        // hue sweeps blue (220) → purple (270) → pink (320) with scroll
-        background:
-          "linear-gradient(160deg, hsl(calc(220 + var(--p, 0) * 100) 90% 97%), hsl(calc(260 + var(--p, 0) * 60) 85% 93%))",
-      }}
-    >
-      {children}
+    <div ref={ref} className="relative overflow-hidden bg-gradient-to-b from-white via-blue-50 to-purple-50">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ transform: "translateY(calc(var(--p, 0) * -25%))" }}
+      >
+        {PUFFS.map(([left, top, size, hue, delay], i) => (
+          <span
+            key={i}
+            className="smoke-puff"
+            style={{
+              left: `${left}%`,
+              top: `${top}%`,
+              width: `${size}vw`,
+              height: `${size}vw`,
+              background: `radial-gradient(circle, hsl(${hue} 85% 70% / 0.75), transparent 68%)`,
+              animationDelay: `${delay}s`,
+            }}
+          />
+        ))}
+      </div>
+      <div className="relative">{children}</div>
     </div>
   );
 }
